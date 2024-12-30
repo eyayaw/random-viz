@@ -1,0 +1,41 @@
+---
+format: gfm
+engine: knitr
+---
+
+
+```{r}
+library(data.table)
+first_name = \(x) sub("([[:alpha:]]+) ([[:alpha:]]+)", "\\1", x)
+data = fread("viz/birr-devaluation/exchange_rates_tidy.csv")
+```
+
+```{r}
+#| label: tbl-top-10-largest-changes
+# top 10 changes ----
+top_changes = data |>
+  transform(t0 = shift(date), rate0 = shift(rate)) |>
+  _[order(-abs(grate)), ] |>
+  head(10) |>
+  _[, .(admin = first_name(regime), t0, t1 = date, rate0, rate1 = rate, grate = -1 * grate)]
+
+top_changes |>
+  _[, .(
+    Date = sprintf("%s --> %s", t0, t1),
+    Rate = sprintf("%3.2f --> %3.2f", rate0, rate1),
+    `Change (%)` = sprintf("%6.2f", grate)
+  )] |>
+  knitr::kable(caption = "Top 10 largest changes in Birr's value against the USD.")
+```
+
+```{r}
+# tweet draft ----
+sprintf(
+  r"(📉 Here is a viz of the #Ethiopian Birr's declining value, inspired by NYT's Ruble value plot. The Birr has weakened significantly, falling from around 11 Birr in 2008 to over 110 Birr per USD in late 2024. The currency's depreciation has accelerated recently following the shift to a market-based foreign exchange regime, dropping by %.2f%% on %s.
+#rstats #dataviz
+)",
+  abs(top_changes$grate[1]),
+  format(top_changes[["t1"]][1], "%B %d, %Y")
+) |>
+  cat()
+```

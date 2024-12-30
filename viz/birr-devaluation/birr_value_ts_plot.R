@@ -7,7 +7,7 @@ colors = c(blue = "#0072B2", green = "#009E73", red = "#D55E00")
 # import exchange rates data ----
 ## exchange rates from NBE ----
 # interbank exchange rates
-interbank = fread("birr-devaluation/interbank_exchange_rates.csv", col.names = tolower)
+interbank = fread("viz/birr-devaluation/interbank_exchange_rates_nbe.csv", col.names = tolower)
 
 interbank[, date := as.Date(market_day, format = "%m/%d/%Y")
           ][, market_day := NULL
@@ -23,7 +23,7 @@ interbank[, weighted_average_rate :=
 setnames(interbank, "weighted_average_rate", "rate")
 
 # transaction exchange rates
-transact = fread("birr-devaluation/exchange_rates_nbe.csv")
+transact = fread("viz/birr-devaluation/transactional_exchange_rates_nbe.csv")
 transact = transact[currency_name == "US DOLLAR",
                     c("date", "buying", "selling"), with = FALSE
                     ][, rate := rowMeans(.SD, na.rm = TRUE), .SDcols = c("buying", "selling")
@@ -37,7 +37,7 @@ setorder(nbe, date)
 
 
 ## exchange rates from CBE ----
-cbe = fread("birr-devaluation/exchange_rates_cbe.csv", col.names = tolower)
+cbe = fread("viz/birr-devaluation/transactional_exchange_rates_cbe.csv", col.names = tolower)
 cbe = cbe[currencyname == "US DOLLAR", c("date", "transactionalbuying", "transactionalselling"), with = FALSE]
 
 cbe[, rate := rowMeans(.SD, na.rm = TRUE), .SDcols = c("transactionalbuying", "transactionalselling")
@@ -66,6 +66,9 @@ data[, regime := fcase(
   date >= regimes$date[2] & date < regimes$date[3], regimes$name[2],
   date >= regimes$date[3], regimes$name[3]
 )]
+
+# write the tidy data
+fwrite(data, "viz/birr-devaluation/exchange_rates_tidy.csv")
 
 # other events
 events = data.frame(
@@ -173,33 +176,4 @@ data |>
       )
   ) -> p
 
-ggsave("birr-devaluation/etb-usd.png", width = 9, height = 6, dpi = 300, device = ragg::agg_png)
-
-
-# top 10 changes ----
-top_changes = data |>
-  transform(t0 = shift(date), rate0 = shift(rate)) |>
-  _[order(-abs(grate)), ] |>
-  head(10) |>
-  _[, .(admin = first_name(regime), t0, t1 = date, rate0, rate1 = rate, grate = -1 * grate)]
-
-top_changes |>
-  _[, .(
-    Date = sprintf("%s --> %s", t0, t1),
-    Rate = sprintf("%3.2f --> %3.2f", rate0, rate1),
-    `Change (%)` = sprintf("%6.2f", grate)
-  )] |>
-  knitr::kable(
-    format = "markdown",
-    caption = "Top 10 largest changes in Birr's value against the USD."
-  )
-
-# tweet draft ----
-sprintf(
-  r"(📉 Here is a viz of the #Ethiopian Birr's declining value, inspired by NYT's Ruble value plot. The Birr has weakened significantly, falling from around 11 Birr in 2008 to over 110 Birr per USD in late 2024. The currency's depreciation has accelerated recently following the shift to a market-based foreign exchange regime, dropping by %.2f%% on %s.
-#rstats #dataviz
-)",
-  abs(top_changes$grate[1]),
-  format(top_changes[["t1"]][1], "%B %d, %Y")
-) |>
-  cat()
+ggsave("viz/birr-devaluation/etb-usd.png", width = 9, height = 6, dpi = 300, device = ragg::agg_png)

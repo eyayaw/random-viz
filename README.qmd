@@ -12,6 +12,8 @@ execute:
 
 ## Birr's value decline against USD
 
-> [View Code](birr-devaluation/birr_value_ts_plot.R)<img src="https://raw.githubusercontent.com/FortAwesome/Font-Awesome/refs/heads/6.x/svgs/brands/r-project.svg" alt="R Logo" width="20" height="20"/>
+> [View Code](viz/birr-devaluation/birr_value_ts_plot.R)<img src="https://raw.githubusercontent.com/FortAwesome/Font-Awesome/refs/heads/6.x/svgs/brands/r-project.svg" alt="R Logo" width="20" height="20"/>
 
-[![](./birr-devaluation/etb-usd.png){width="50%"}](./birr-devaluation/etb-usd.png)
+[![](./viz/birr-devaluation/etb-usd.png){width="50%"}](./viz/birr-devaluation/etb-usd.png)
+
+{{< include viz/birr-devaluation/draft.qmd >}}
